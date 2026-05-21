@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Abdo's Shit Dump</title>
+<link href="https://fonts.googleapis.com/css2?family=Schoolbell&family=Patrick+Hand&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --lh:32px;
+  --gold:#C9933A;
+  --paper:#FEFBF0;
+  --paper2:#FDF7E3;
+  --rule:#D8CFAB;
+  --margin-line:rgba(200,55,55,0.28);
+  --ink:#1A0F05;
+  --ink2:#6B4828;
+  --page-edge:#C9BC8A;
+  --sb-w:190px;
+}
+
+html,body{
+  height:100%;overflow:hidden;
+  background:#FEFBF0;
+  font-family:'Patrick Hand',cursive;
+}
+
+/* ══════════════════════════
+   FULL-PAGE NOTEBOOK
+══════════════════════════ */
+.page{
+  position:fixed;inset:0;
+  background:var(--paper);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+
+/* ruled lines — start at 64px (header height), every 32px */
+.page::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(
+    to bottom,
+    transparent 0,transparent calc(var(--lh) - 1px),
+    var(--rule) calc(var(--lh) - 1px),var(--rule) var(--lh)
+  );
+  background-position:0 64px;
+}
+
+/* red margin line */
+.page::after{
+  content:'';position:absolute;
+  left:72px;top:0;bottom:0;width:1.5px;
+  background:var(--margin-line);
+  pointer-events:none;z-index:1;
+}
+
+/* ── HEADER (exactly 2 rule-heights = 64px) ── */
+.page-header{
+  flex-shrink:0;height:64px;
+  padding:0 110px 0 88px; /* right pad leaves room for top-right buttons */
+  display:flex;flex-direction:column;justify-content:flex-end;
+  position:relative;z-index:5;
+}
+.page-date{
+  font-family:'Schoolbell',cursive;font-size:.72rem;
+  color:var(--ink2);height:var(--lh);line-height:var(--lh);
+  display:flex;align-items:flex-end;padding-bottom:2px;
+}
+.title-input{
+  font-family:'Schoolbell',cursive;font-size:1.5rem;
+  color:var(--ink);background:transparent;
+  border:none;outline:none;width:100%;
+  height:var(--lh);line-height:var(--lh);
+  caret-color:#C03030;padding:0;
+}
+.title-input::placeholder{color:var(--rule)}
+
+/* ── SCROLL AREA ── */
+.page-scroll{
+  flex:1;overflow-y:auto;
+  position:relative;z-index:2;
+  padding:0 80px 80px 88px;
+}
+.page-scroll::-webkit-scrollbar{width:5px}
+.page-scroll::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+
+.page-body{
+  width:100%;min-height:calc(var(--lh)*20);
+  background:transparent;border:none;outline:none;resize:none;
+  font-family:'Patrick Hand',cursive;font-size:1rem;
+  line-height:var(--lh);color:var(--ink);
+  caret-color:#C03030;
+  padding:1px 0 0;
+  white-space:pre-wrap;word-wrap:break-word;overflow:hidden;
+}
+.page-body::placeholder{color:var(--rule)}
+.page-body::selection{background:rgba(200,155,50,0.2)}
+
+/* ── TOP-RIGHT CLUSTER ── */
+.top-right{
+  position:fixed;top:10px;right:16px;z-index:30;
+  display:flex;align-items:center;gap:5px;
+}
+
+/* ── BOTTOM BAR ── */
+.page-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 20px 12px 88px;
+  background:linear-gradient(to top,var(--paper) 55%,transparent);
+  pointer-events:none;
+}
+.page-bar > *{pointer-events:all}
+
+.bar-meta{
+  display:flex;align-items:center;gap:7px;
+  font-family:'Schoolbell',cursive;font-size:.72rem;color:var(--ink2);
+}
+.sdot{
+  width:6px;height:6px;border-radius:50%;
+  background:#ccc;transition:background .4s;flex-shrink:0;
+}
+.sdot.connected{background:#5CB85C}
+.sdot.saving{background:#F0AD4E;animation:blink .5s infinite alternate}
+.sdot.error{background:#D9534F}
+@keyframes blink{from{opacity:1}to{opacity:.2}}
+
+.bar-right{display:flex;align-items:center;gap:5px}
+
+.bbtn{
+  font-family:'Schoolbell',cursive;font-size:.75rem;
+  background:var(--paper2);color:var(--ink);
+  border:1.5px solid var(--page-edge);border-radius:16px;
+  padding:3px 11px;cursor:pointer;
+  box-shadow:1px 2px 0 var(--page-edge);
+  transition:transform .1s,box-shadow .1s;
+}
+.bbtn:hover{transform:translate(-1px,-1px);box-shadow:2px 3px 0 var(--page-edge)}
+.bbtn:active{transform:translate(1px,1px);box-shadow:0 0 0 var(--page-edge)}
+.bbtn.gold{
+  background:rgba(201,147,58,0.12);border-color:var(--gold);
+  box-shadow:1px 2px 0 var(--gold);color:#3A1A05;
+}
+.bbtn.danger{background:#FDF0EE;border-color:#D9534F;box-shadow:1px 2px 0 #D9534F}
+
+.pg-nav{display:flex;align-items:center;gap:1px}
+.pg-arrow{
+  background:none;border:none;cursor:pointer;
+  font-size:1rem;color:var(--ink2);padding:0 4px;line-height:1;
+  transition:color .1s;
+}
+.pg-arrow:hover{color:var(--ink)}
+.pg-arrow:disabled{opacity:.25;cursor:default}
+.pg-label{
+  font-family:'Schoolbell',cursive;font-size:.72rem;
+  color:var(--ink2);min-width:36px;text-align:center;
+}
+
+.page-num{
+  position:fixed;bottom:12px;right:20px;z-index:21;
+  font-family:'Schoolbell',cursive;font-size:.7rem;
+  color:var(--rule);pointer-events:none;
+}
+
+/* ══════════════════════════
+   SIDEBAR
+══════════════════════════ */
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;
+  width:var(--sb-w);z-index:100;
+  background:rgba(28,14,4,0.96);
+  border-right:1px solid rgba(201,147,58,0.22);
+  display:flex;flex-direction:column;
+  transform:translateX(calc(-1 * var(--sb-w)));
+  transition:transform .35s cubic-bezier(0.4,0,0.2,1);
+  box-shadow:4px 0 30px rgba(0,0,0,0.4);
+}
+.sidebar.open{transform:translateX(0)}
+
+.sb-head{
+  padding:14px 10px 8px;
+  border-bottom:1px solid rgba(201,147,58,0.18);
+  flex-shrink:0;
+}
+.sb-title{
+  font-family:'Schoolbell',cursive;font-size:.88rem;
+  color:rgba(255,220,140,.85);margin-bottom:7px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sb-close{
+  background:none;border:none;cursor:pointer;
+  color:rgba(255,200,100,.5);font-size:.9rem;padding:0;
+  line-height:1;transition:color .15s;
+}
+.sb-close:hover{color:rgba(255,200,100,.9)}
+.sb-search{
+  width:100%;padding:4px 8px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(201,147,58,0.22);border-radius:10px;
+  color:rgba(255,220,140,.8);font-family:'Patrick Hand',cursive;font-size:.74rem;
+  outline:none;
+}
+.sb-search::placeholder{color:rgba(255,210,120,.28)}
+
+.sb-list{
+  flex:1;overflow-y:auto;padding:6px 7px;
+  display:flex;flex-direction:column;gap:5px;
+}
+.sb-list::-webkit-scrollbar{width:3px}
+.sb-list::-webkit-scrollbar-thumb{background:rgba(201,147,58,0.25);border-radius:2px}
+
+.sb-thumb{
+  flex-shrink:0;height:94px;
+  background:var(--paper);border-radius:4px;
+  cursor:pointer;position:relative;overflow:hidden;
+  border:2px solid transparent;
+  transition:border-color .15s,transform .1s,box-shadow .1s;
+}
+.sb-thumb:hover{transform:translateY(-1px);border-color:rgba(201,147,58,0.45)}
+.sb-thumb.active{border-color:var(--gold);box-shadow:0 0 0 1px rgba(201,147,58,0.2)}
+
+/* tiny ruled lines */
+.sb-thumb::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(
+    to bottom,transparent 0,transparent 10px,
+    rgba(180,160,100,0.38) 10px,rgba(180,160,100,0.38) 11px
+  );
+  background-position:0 17px;
+}
+/* tiny margin */
+.sb-thumb::after{
+  content:'';position:absolute;
+  left:19px;top:0;bottom:0;width:1px;
+  background:rgba(200,55,55,0.25);pointer-events:none;
+}
+
+.sb-preview{
+  position:absolute;inset:0;
+  padding:3px 4px 3px 23px;
+  font-family:'Patrick Hand',cursive;font-size:5.8px;
+  line-height:11px;color:rgba(26,15,5,0.55);
+  overflow:hidden;word-break:break-all;white-space:pre-wrap;
+  pointer-events:none;
+}
+.sb-preview-title{
+  font-family:'Schoolbell',cursive;font-size:7px;
+  color:rgba(26,15,5,0.82);line-height:12px;margin-bottom:1px;
+}
+.sb-pg-num{
+  position:absolute;bottom:3px;right:5px;
+  font-family:'Schoolbell',cursive;font-size:6px;
+  color:rgba(26,15,5,0.3);
+}
+
+.sb-add{
+  flex-shrink:0;margin:6px 7px;
+  background:rgba(201,147,58,0.1);
+  border:1px dashed rgba(201,147,58,0.32);border-radius:4px;
+  padding:6px;text-align:center;cursor:pointer;
+  font-family:'Schoolbell',cursive;font-size:.76rem;
+  color:rgba(255,220,140,.45);
+  transition:background .15s,color .15s;
+}
+.sb-add:hover{background:rgba(201,147,58,0.2);color:rgba(255,220,140,.9)}
+
+/* ── SIDEBAR SCRIM ── */
+.scrim{
+  position:fixed;inset:0;z-index:90;
+  background:rgba(0,0,0,0);pointer-events:none;
+  transition:background .35s;
+}
+.scrim.on{background:rgba(0,0,0,0.18);pointer-events:all}
+
+/* ══════════════════════════
+   PAGE FLIP OVERLAY
+══════════════════════════ */
+.flipper{
+  position:fixed;inset:0;pointer-events:none;z-index:50;
+  transform-origin:left center;
+  transform:rotateY(0deg);opacity:0;
+  perspective:1600px;
+}
+.flip-sheet{
+  position:absolute;inset:0;
+  transform-origin:left center;
+  transform:rotateY(0deg);
+  transition:transform .7s cubic-bezier(0.77,0,0.18,1);
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  background:var(--paper2);
+}
+.flip-sheet::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(
+    to bottom,transparent 0,transparent calc(var(--lh) - 1px),
+    var(--rule) calc(var(--lh) - 1px),var(--rule) var(--lh)
+  );
+  background-position:0 64px;
+}
+.flip-sheet::after{
+  content:'';position:absolute;
+  left:72px;top:0;bottom:0;width:1.5px;
+  background:var(--margin-line);pointer-events:none;
+}
+/* left-edge shadow on flip sheet for depth */
+.flip-shadow{
+  position:absolute;
+  top:0;bottom:0;left:0;width:60px;
+  background:linear-gradient(to right,rgba(0,0,0,0.18),transparent);
+  pointer-events:none;
+}
+
+/* ══════════════════════════
+   MODAL
+══════════════════════════ */
+.modal-wrap{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(15,8,0,.55);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .22s;
+}
+.modal-wrap.open{opacity:1;pointer-events:all}
+.modal{
+  background:var(--paper);border:2.5px solid var(--gold);border-radius:8px;
+  padding:20px 24px;width:min(420px,92vw);
+  box-shadow:4px 5px 0 #3A1A05,0 20px 50px rgba(0,0,0,0.45);
+  transform:translateY(6px);transition:transform .22s;
+}
+.modal-wrap.open .modal{transform:translateY(0)}
+.modal h2{font-family:'Schoolbell',cursive;font-size:1.3rem;color:var(--ink);margin-bottom:12px}
+.modal label{display:block;font-family:'Schoolbell',cursive;font-size:.8rem;color:var(--ink2);margin-bottom:3px;margin-top:10px}
+.modal input{
+  width:100%;padding:5px 8px;
+  border:2px solid var(--page-edge);border-radius:5px;
+  background:var(--paper2);color:var(--ink);
+  font-family:'Patrick Hand',cursive;font-size:.83rem;outline:none;
+}
+.modal input:focus{border-color:#8B5230}
+.modal-note{
+  margin-top:10px;font-family:'Patrick Hand',cursive;font-size:.73rem;
+  color:var(--ink2);line-height:1.5;
+  padding:8px 10px;background:#FFF8DC;
+  border-radius:5px;border-left:3px solid var(--gold);
+}
+.modal-note a{color:#1a7a5e}
+.modal-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:13px}
+.mbtn{
+  padding:5px 15px;border-radius:16px;cursor:pointer;
+  font-family:'Schoolbell',cursive;font-size:.8rem;
+  border:2px solid var(--page-edge);background:var(--paper2);color:var(--ink);
+  box-shadow:2px 2px 0 var(--page-edge);transition:transform .1s;
+}
+.mbtn:hover{transform:translate(-1px,-1px)}
+.mbtn.primary{background:#5C2F0E;color:#FFE8C0;border-color:#3A1A05;box-shadow:2px 2px 0 #3A1A05}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:4rem;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:#FFE8C0;
+  padding:5px 16px;border-radius:22px;
+  font-family:'Schoolbell',cursive;font-size:.8rem;
+  opacity:0;transition:opacity .3s;pointer-events:none;z-index:300;
+}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- SCRIM (sidebar backdrop) -->
+<div class="scrim" id="scrim" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sb-head">
+    <div class="sb-title">
+      📄 Pages
+      <button class="sb-close" onclick="closeSidebar()">✕</button>
+    </div>
+    <input class="sb-search" id="sbSearch" placeholder="search…" oninput="filterPages(this.value)"/>
+  </div>
+  <div class="sb-list" id="sbList"></div>
+  <div class="sb-add" onclick="addPage()">+ new page</div>
+</div>
+
+<!-- PAGE FLIP LAYER -->
+<div class="flipper" id="flipper">
+  <div class="flip-sheet" id="flipSheet">
+    <div class="flip-shadow"></div>
+  </div>
+</div>
+
+<!-- FULL-SCREEN NOTEBOOK PAGE -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-date" id="pageDate"></div>
+    <input class="title-input" id="titleInput" type="text"
+           placeholder="untitled…" autocomplete="off" spellcheck="true"/>
+  </div>
+  <div class="page-scroll" id="pageScroll">
+    <textarea class="page-body" id="bodyInput"
+              placeholder="dump it here…" spellcheck="true"></textarea>
+  </div>
+</div>
+
+<!-- TOP-RIGHT CONTROLS -->
+<div class="top-right">
+  <button class="bbtn" onclick="openSettings()">⚙</button>
+  <button class="bbtn" onclick="copyLink()">⬡</button>
+  <button class="bbtn danger" onclick="clearPage()">✕</button>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="page-bar">
+  <div class="bar-meta">
+    <div class="sdot" id="statusDot"></div>
+    <span id="statusText">offline</span>
+    <span>·</span><span id="wordCount">0 words</span>
+    <span>·</span><span id="viewerCount">—</span>
+  </div>
+  <div class="bar-right">
+    <div class="pg-nav">
+      <button class="pg-arrow" id="prevBtn" onclick="goPage(currentPage-1)" disabled>‹</button>
+      <span class="pg-label" id="pgLabel">p.1</span>
+      <button class="pg-arrow" id="nextBtn" onclick="goPage(currentPage+1)">›</button>
+    </div>
+    <button class="bbtn gold" onclick="toggleSidebar()">☰ pages</button>
+  </div>
+</div>
+
+<div class="page-num" id="pageNum">1 / 500</div>
+
+<!-- MODAL -->
+<div class="modal-wrap" id="overlay" onclick="closeIfBg(event)">
+  <div class="modal">
+    <h2>🔥 Firebase Setup</h2>
+    <label>Project ID</label>
+    <input id="cfgProjectId" placeholder="my-notebook-abc12"/>
+    <label>Database URL <small style="font-size:.67rem">(blank = auto)</small></label>
+    <input id="cfgDbUrl" placeholder="https://…-default-rtdb.firebaseio.com"/>
+    <label>API Key</label>
+    <input id="cfgApiKey" placeholder="AIza…"/>
+    <label>Notebook ID</label>
+    <input id="cfgNotebookId" placeholder="main"/>
+    <div class="modal-note">
+      1. <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → free project<br>
+      2. Build → Realtime Database → create (test mode)<br>
+      3. Project Settings → Web App → copy <code>projectId</code>, <code>databaseURL</code>, <code>apiKey</code>
+    </div>
+    <div class="modal-actions">
+      <button class="mbtn" onclick="closeSettings()">cancel</button>
+      <button class="mbtn primary" onclick="saveSettings()">connect</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+const TOTAL = 500;
+let currentPage = 1;
+let pages = {};
+let isRemote = false, saveTimer = null;
+let db = null, notebookRef = null, presenceRef = null;
+let flipping = false;
+
+const titleEl  = document.getElementById('titleInput');
+const bodyEl   = document.getElementById('bodyInput');
+const dotEl    = document.getElementById('statusDot');
+const statusEl = document.getElementById('statusText');
+const viewerEl = document.getElementById('viewerCount');
+const wordEl   = document.getElementById('wordCount');
+const sbList   = document.getElementById('sbList');
+const sidebar  = document.getElementById('sidebar');
+const scrim    = document.getElementById('scrim');
+const flipper  = document.getElementById('flipper');
+const flipSheet= document.getElementById('flipSheet');
+
+/* ── INIT ── */
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('pageDate').textContent =
+    new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const saved = localStorage.getItem('nb_pages');
+  if (saved) try { pages = JSON.parse(saved); } catch(_) {}
+  renderPage(1);
+  buildSidebar();
+  autoResize();
+  const cfg = loadConfig();
+  if (cfg) initFirebase(cfg); else setStatus('offline','');
+});
+
+/* ── SIDEBAR ── */
+function toggleSidebar(){
+  sidebar.classList.toggle('open');
+  scrim.classList.toggle('on', sidebar.classList.contains('open'));
+}
+function closeSidebar(){
+  sidebar.classList.remove('open');
+  scrim.classList.remove('on');
+}
+
+function buildSidebar(filter){
+  sbList.innerHTML = '';
+  const maxUsed = getMaxUsedPage();
+  for (let i = 1; i <= Math.min(maxUsed + 4, TOTAL); i++){
+    const pg = pages[i] || {};
+    const title = pg.title || '', body = pg.body || '';
+    if (filter && !title.toLowerCase().includes(filter) && !body.toLowerCase().includes(filter)) continue;
+
+    const t = document.createElement('div');
+    t.className = 'sb-thumb' + (i === currentPage ? ' active' : '');
+    t.innerHTML =
+      `<div class="sb-preview"><div class="sb-preview-title">${escHtml(title)||'&nbsp;'}</div>${escHtml(body).slice(0,130)}</div>` +
+      `<div class="sb-pg-num">${i}</div>`;
+    t.addEventListener('click', () => { goPage(i); closeSidebar(); });
+    sbList.appendChild(t);
+  }
+}
+function filterPages(v){ buildSidebar(v.trim().toLowerCase() || null); }
+function addPage(){
+  const n = Math.min(getMaxUsedPage() + 1, TOTAL);
+  goPage(n); closeSidebar();
+}
+function getMaxUsedPage(){
+  let m = 1;
+  for (const k in pages){ const n = parseInt(k); if ((pages[k].title||pages[k].body) && n > m) m = n; }
+  return m;
+}
+function scrollSbActive(){
+  const a = sbList.querySelector('.sb-thumb.active');
+  if (a) a.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+
+/* ── PAGE NAV + FLIP ── */
+function goPage(n){
+  n = Math.min(TOTAL, Math.max(1, n));
+  if (n === currentPage || flipping) return;
+  saveCurrent();
+  const dir = n > currentPage ? 1 : -1;
+  animateFlip(dir, () => {
+    currentPage = n;
+    renderPage(n);
+    buildSidebar(document.getElementById('sbSearch').value.trim().toLowerCase() || null);
+    scrollSbActive();
+    if (notebookRef) listenPage(n);
+  });
+}
+
+function animateFlip(dir, cb){
+  flipping = true;
+  // position flipSheet: starts from current page side
+  flipSheet.style.transition = 'none';
+  flipSheet.style.transform = dir > 0 ? 'rotateY(0deg)' : 'rotateY(-178deg)';
+  flipper.style.opacity = '1';
+  flipper.style.perspective = '1600px';
+
+  // force reflow
+  flipSheet.offsetHeight;
+
+  flipSheet.style.transition = 'transform .7s cubic-bezier(0.77,0,0.18,1)';
+  flipSheet.style.transform  = dir > 0 ? 'rotateY(-178deg)' : 'rotateY(0deg)';
+
+  setTimeout(() => {
+    flipper.style.opacity = '0';
+    flipSheet.style.transition = 'none';
+    flipSheet.style.transform = 'rotateY(0deg)';
+    flipping = false;
+    cb();
+  }, 720);
+}
+
+function renderPage(n){
+  currentPage = n;
+  const pg = pages[n] || {};
+  titleEl.value = pg.title || '';
+  bodyEl.value  = pg.body  || '';
+  document.getElementById('pageNum').textContent = n + ' / ' + TOTAL;
+  document.getElementById('pgLabel').textContent = 'p.' + n;
+  document.getElementById('prevBtn').disabled = n <= 1;
+  document.getElementById('nextBtn').disabled = n >= TOTAL;
+  autoResize(); updateWordCount();
+}
+
+function saveCurrent(){
+  if (!pages[currentPage]) pages[currentPage] = {};
+  pages[currentPage].title = titleEl.value;
+  pages[currentPage].body  = bodyEl.value;
+  localStorage.setItem('nb_pages', JSON.stringify(pages));
+}
+
+/* ── INPUTS ── */
+titleEl.addEventListener('input', () => { saveCurrent(); refreshThumb(currentPage); scheduleWrite(); });
+bodyEl.addEventListener('input',  () => { autoResize(); updateWordCount(); saveCurrent(); refreshThumb(currentPage); scheduleWrite(); });
+
+function autoResize(){
+  bodyEl.style.height = 'auto';
+  bodyEl.style.height = bodyEl.scrollHeight + 'px';
+}
+function updateWordCount(){
+  const w = (bodyEl.value.trim()+' '+titleEl.value.trim()).split(/\s+/).filter(Boolean).length;
+  wordEl.textContent = w + (w===1?' word':' words');
+}
+function refreshThumb(n){
+  const thumbs = sbList.querySelectorAll('.sb-thumb');
+  // find thumb with matching page num
+  thumbs.forEach(th => {
+    const pg_num_el = th.querySelector('.sb-pg-num');
+    if (pg_num_el && parseInt(pg_num_el.textContent) === n){
+      const pg = pages[n] || {};
+      th.querySelector('.sb-preview').innerHTML =
+        `<div class="sb-preview-title">${escHtml(pg.title||'')||'&nbsp;'}</div>${escHtml((pg.body||'').slice(0,130))}`;
+    }
+  });
+}
+
+/* ── FIREBASE ── */
+function initFirebase(cfg){
+  try {
+    if (window._fbApp) window._fbApp.delete().catch(()=>{});
+    const app = firebase.initializeApp({
+      apiKey:      cfg.apiKey,
+      projectId:   cfg.projectId,
+      databaseURL: cfg.dbUrl || `https://${cfg.projectId}-default-rtdb.firebaseio.com`,
+    }, 'nb-' + Date.now());
+    window._fbApp = app;
+    db = firebase.database(app);
+    const nid = (cfg.notebookId||'main').replace(/[^a-z0-9_-]/gi,'-');
+    notebookRef = db.ref(`notebooks/${nid}`);
+    presenceRef = db.ref(`notebooks/${nid}/presence`);
+    setStatus('connecting…','');
+    listenPage(currentPage);
+    setupPresence();
+  } catch(e) { setStatus('error','error'); showToast('Firebase: '+e.message); }
+}
+
+let currentListener = null;
+function listenPage(n){
+  if (!notebookRef) return;
+  if (currentListener) notebookRef.child('pages/p'+currentListener).off('value');
+  currentListener = n;
+  notebookRef.child('pages/p'+n).on('value', snap => {
+    setStatus('connected','connected');
+    const data = snap.val() || {};
+    if (parseInt(currentListener) !== currentPage) return;
+    isRemote = true;
+    if (data.title !== undefined && titleEl.value !== data.title) titleEl.value = data.title;
+    if (data.body  !== undefined && bodyEl.value  !== data.body){
+      const pos = bodyEl.selectionStart;
+      bodyEl.value = data.body;
+      try { bodyEl.setSelectionRange(pos,pos); } catch(_){}
+    }
+    if (!pages[n]) pages[n] = {};
+    pages[n].title = data.title||'';
+    pages[n].body  = data.body||'';
+    localStorage.setItem('nb_pages', JSON.stringify(pages));
+    autoResize(); updateWordCount(); refreshThumb(n);
+    isRemote = false;
+  }, err => setStatus('error','error'));
+}
+
+function setupPresence(){
+  const r = presenceRef.push({t:Date.now()});
+  r.onDisconnect().remove();
+  presenceRef.on('value', snap => {
+    const n = snap.numChildren()||0;
+    viewerEl.textContent = n+(n===1?' viewer':' viewers');
+  });
+}
+
+function scheduleWrite(){
+  if (isRemote || !notebookRef) return;
+  setStatus('saving…','saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    notebookRef.child('pages/p'+currentPage).set({
+      title: titleEl.value, body: bodyEl.value, ts: Date.now()
+    }).then(()=>setStatus('saved','connected'))
+      .catch(()=>setStatus('error','error'));
+  }, 700);
+}
+
+/* ── SETTINGS ── */
+function openSettings(){
+  const c = loadConfig()||{};
+  document.getElementById('cfgProjectId').value = c.projectId||'';
+  document.getElementById('cfgDbUrl').value      = c.dbUrl||'';
+  document.getElementById('cfgApiKey').value     = c.apiKey||'';
+  document.getElementById('cfgNotebookId').value = c.notebookId||'main';
+  document.getElementById('overlay').classList.add('open');
+}
+function closeSettings(){ document.getElementById('overlay').classList.remove('open'); }
+function closeIfBg(e){ if(e.target===document.getElementById('overlay')) closeSettings(); }
+function saveSettings(){
+  const c = {
+    projectId:  document.getElementById('cfgProjectId').value.trim(),
+    dbUrl:      document.getElementById('cfgDbUrl').value.trim(),
+    apiKey:     document.getElementById('cfgApiKey').value.trim(),
+    notebookId: document.getElementById('cfgNotebookId').value.trim()||'main',
+  };
+  if (!c.projectId||!c.apiKey){ showToast('project ID + API key required'); return; }
+  localStorage.setItem('nb_config', JSON.stringify(c));
+  closeSettings(); initFirebase(c); showToast('connecting…');
+}
+function loadConfig(){ try { return JSON.parse(localStorage.getItem('nb_config')); } catch(_){ return null; } }
+
+/* ── UTILS ── */
+function clearPage(){
+  if (!confirm('clear this page?')) return;
+  titleEl.value=''; bodyEl.value='';
+  saveCurrent(); refreshThumb(currentPage); autoResize(); updateWordCount(); scheduleWrite();
+}
+function copyLink(){ navigator.clipboard.writeText(location.href).then(()=>showToast('link copied!')); }
+function setStatus(t,c){ statusEl.textContent=t; dotEl.className='sdot'+(c?' '+c:''); }
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+window.addEventListener('beforeunload', e=>{ if(saveTimer){ e.preventDefault(); e.returnValue=''; } });
+</script>
+</body>
+</html>
